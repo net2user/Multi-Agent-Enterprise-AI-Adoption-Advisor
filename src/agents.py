@@ -11,8 +11,14 @@ into the same orchestrator interface.
 import json
 import os
 from openai import OpenAI
+from dotenv import load_dotenv
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+load_dotenv()
+
+client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+)
 
 VALUE_AGENT_SYSTEM_PROMPT = """You are the Business Value Agent inside an Enterprise AI Adoption Advisor system.
 
@@ -64,7 +70,7 @@ def evaluate_business_value(use_case_description: str, portfolio_context: dict =
         user_content += f"\n\nPortfolio context:\n{json.dumps(portfolio_context, indent=2)}"
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="llama-3.3-70b-versatile",
         messages=[
             {"role": "system", "content": VALUE_AGENT_SYSTEM_PROMPT},
             {"role": "user", "content": user_content},

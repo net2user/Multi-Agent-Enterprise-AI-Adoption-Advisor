@@ -8,8 +8,14 @@ AI use case. Same call pattern as the Value and Risk agents.
 import json
 import os
 from openai import OpenAI
+from dotenv import load_dotenv
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+load_dotenv()
+
+client = OpenAI(
+    api_key=os.environ.get("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+)
 
 ARCHITECTURE_AGENT_SYSTEM_PROMPT = """You are the Architecture Agent inside an Enterprise AI Adoption Advisor system.
 
@@ -53,7 +59,7 @@ def evaluate_architecture(use_case_description: str, portfolio_context: dict = N
         user_content += f"\n\nPortfolio context:\n{json.dumps(portfolio_context, indent=2)}"
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="llama-3.3-70b-versatile",
         messages=[
             {"role": "system", "content": ARCHITECTURE_AGENT_SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
@@ -63,3 +69,20 @@ def evaluate_architecture(use_case_description: str, portfolio_context: dict = N
     )
 
     return json.loads(response.choices[0].message.content)
+
+
+if __name__ == "__main__":
+    with open("data/use_case_portfolio.json") as f:
+        portfolio = json.load(f)
+
+    uc = portfolio["use_cases"][0]  # UC-001: procurement operations
+    context = {
+        "sector": uc["sector"],
+        "domain": uc["domain"],
+        "vendor": uc["vendor"],
+        "integration_points": uc["integration_points"],
+        "current_process_maturity": uc["current_process_maturity"],
+    }
+
+    result = evaluate_architecture(uc["description"], context)
+    print(json.dumps(result, indent=2))
