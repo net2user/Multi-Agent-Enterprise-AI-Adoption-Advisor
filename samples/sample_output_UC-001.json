@@ -1,0 +1,16 @@
+{
+  "value_score": 68,
+  "value_tier": "High",
+  "estimated_annual_value_range_usd": "1.4M - 1.9M",
+  "value_drivers": [
+    "Reduction in manual contract review hours across procurement team",
+    "Early detection of pricing anomalies before contract renewal cycles",
+    "Consolidation of fragmented vendor relationships in indirect spend"
+  ],
+  "key_assumptions": [
+    "Current manual review covers less than 30 percent of indirect spend contracts annually",
+    "Procurement team adopts flagged recommendations rather than treating them as advisory only"
+  ],
+  "confidence": "Medium",
+  "rationale": "This use case targets a high-volume, low-maturity manual process, which is exactly where AI assistance tends to show measurable value fastest. The value is real but depends heavily on procurement actually acting on the flagged recommendations, which is why confidence sits at Medium rather than High."
+}

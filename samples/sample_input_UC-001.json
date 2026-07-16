@@ -1,0 +1,10 @@
+{
+  "use_case_id": "UC-001",
+  "input_description": "Deploy AI for procurement operations to review vendor contracts, flag pricing anomalies, and recommend consolidation opportunities across indirect spend categories.",
+  "portfolio_context": {
+    "sector": "BFSI",
+    "domain": "Procurement",
+    "estimated_annual_cost_usd": 420000,
+    "current_process_maturity": "Manual, spreadsheet-driven"
+  }
+}
