@@ -4,9 +4,12 @@ A multi agent system that evaluates proposed AI use cases for BFSI and Healthcar
 
 Built by Vikas Sharma, Senior AI and Digital Transformation Advisor.
 
+Live app: coming soon
+Source: github.com/net2user/Multi-Agent-Enterprise-AI-Adoption-Advisor
+
 ## Status
 
-This repository is under active build. Value, Risk and Governance, and Architecture agents are complete and wired into a working orchestrator. Adoption, Portfolio Prioritization, and Executive Summary agents are in progress. This README will expand as each phase lands.
+Complete and working end to end. Five agents, an orchestrator, and a Streamlit dashboard are built, tested, and confirmed against use cases spanning BFSI and Healthcare. This is not a proof of concept, it runs.
 
 ## Problem statement
 
@@ -16,11 +19,11 @@ This system addresses that gap directly. Feed it a single use case description, 
 
 ## Business context
 
-The assessment logic here reflects patterns seen across twenty five years of enterprise AI and digital transformation advisory work in BFSI, Healthcare, Telecom, and Public Sector settings. The agents are calibrated with a synthetic but realistic portfolio of BFSI and Healthcare use cases, covering procurement, KYC, claims fraud, clinical documentation, prior authorization, and lending, so the scoring reflects real regulatory and operational texture rather than generic assumptions.
+The assessment logic here reflects patterns seen across twenty five years of enterprise AI and digital transformation advisory work in BFSI, Healthcare, Telecom, and Public Sector settings. The agents are calibrated with a synthetic but realistic portfolio of eight BFSI and Healthcare use cases, covering procurement, KYC, claims fraud, clinical documentation, prior authorization, and lending, so the scoring reflects real regulatory and operational texture rather than generic assumptions.
 
 ## Architecture
 
-A single use case input flows through an orchestrator built on LangGraph. The orchestrator currently routes the input sequentially through the Value agent, the Risk and Governance agent, and the Architecture agent. The Adoption agent, Portfolio Prioritization agent, and Executive Summary agent are being added in the next build phase, after which the orchestrator will produce one combined assessment covering all five agents plus a board level briefing.
+A single use case input flows through an orchestrator built on LangGraph. The orchestrator routes the input sequentially through four specialist agents, Value, Risk and Governance, Architecture, and Adoption, each producing an independent structured assessment. Once all four complete, their outputs feed into the Executive Summary agent, which synthesizes them into one board level recommendation. The Portfolio Prioritization agent runs separately, ranking multiple already scored use cases against each other rather than evaluating any single one from scratch.
 
 ```
 Use case input
@@ -29,22 +32,28 @@ Use case input
  Orchestrator (LangGraph)
       |
       v
- Value agent -> Risk and Governance agent -> Architecture agent
+ Value agent -> Risk and Governance agent -> Architecture agent -> Adoption agent
       |
       v
- [in progress] Adoption agent -> Portfolio Prioritization agent
-      |
-      v
- [in progress] Executive Summary agent
+ Executive Summary agent
       |
       v
  Output: value score, risk score, complexity score, adoption score,
- ranked portfolio position, executive briefing
+ board level recommendation (Fund / Fund with Conditions / Delay / Do Not Fund)
+
+ Separately, once multiple use cases are scored:
+
+ Portfolio Prioritization agent
+      |
+      v
+ Ranked portfolio: Quick Win / Strategic Bet / Long Term Play / Reconsider
 ```
+
+All five agents run on Groq's Llama 3.3 70B model rather than OpenAI, a deliberate choice made during the build to keep the project genuinely free to run and test, with no billing dependency for anyone cloning the repository to try it themselves.
 
 ## Agent design
 
-Each agent is a focused LLM call with a strict JSON output schema, not a general purpose chatbot wrapped in a persona. This keeps outputs composable, so the orchestrator and the eventual Streamlit dashboard can render structured scores rather than parsing free text.
+Each agent is a focused LLM call with a strict JSON output schema, not a general purpose chatbot wrapped in a persona. This keeps outputs composable, so the orchestrator and the Streamlit dashboard can render structured scores rather than parsing free text.
 
 Value agent evaluates expected business impact, returning a value score, tier, estimated annual value range, and the specific drivers behind the number.
 
@@ -52,11 +61,15 @@ Risk and Governance agent evaluates compliance, security, privacy, and operation
 
 Architecture agent evaluates integration complexity and technical feasibility, returning a complexity score, integration challenges, a recommended architecture pattern, and a build versus buy recommendation.
 
-Each agent is scored independently, then read together, since a high value use case with high risk and high complexity tells a very different story than a high value use case that is low risk and quick to pilot.
+Adoption agent evaluates organizational readiness, the dimension most AI post mortems point to when a technically sound project fails anyway, returning an adoption score, readiness factors across leadership sponsorship, process disruption, workforce impact, and incentive alignment, plus concrete change management actions.
+
+Portfolio Prioritization agent takes the four scores above across multiple use cases and reasons about sequencing, not re-scoring, labeling each use case a Quick Win, Strategic Bet, Long Term Play, or Reconsider.
+
+Executive Summary agent reads all four completed assessments for a single use case and writes the board level call, a clear Fund, Fund with Conditions, Delay, or Do Not Fund recommendation, a one sentence headline, a short briefing paragraph, and the key tension a board member actually needs to weigh.
 
 ## Data flow
 
-Input is a plain text use case description, optionally paired with portfolio context pulled from the synthetic dataset, sector, domain, estimated cost, data sensitivity, regulatory exposure, and current process maturity. Each agent receives the same description and context, reasons independently, and returns its own structured JSON. The orchestrator collects these into one combined result per use case.
+Input is a plain text use case description, optionally paired with portfolio context pulled from the synthetic dataset, sector, domain, estimated cost, data sensitivity, regulatory exposure, and current process maturity. Each agent receives the same description and context, reasons independently, and returns its own structured JSON. The orchestrator collects Value, Risk, Architecture, and Adoption results, then passes all four into the Executive Summary agent for synthesis.
 
 ## Prompt design
 
@@ -64,20 +77,26 @@ Every agent prompt follows the same structure, a role definition that anchors th
 
 ## Evaluation framework
 
-In progress. This section will document how agent outputs are checked for consistency across repeated runs on the same input, and how scores compare against the anonymized real world benchmarks the scoring bands were calibrated against.
+The system was tested against three use cases spanning two sectors before being called complete, UC-001, indirect spend procurement in BFSI, UC-002, automated KYC document verification in BFSI, and UC-004, ambient clinical documentation in Healthcare.
+
+Results confirmed the agents differentiate correctly rather than returning similar scores regardless of input. UC-002 scored substantially higher on risk than UC-001, 70 versus 42, consistent with its High data sensitivity and direct AML and KYC regulatory exposure against UC-001's Medium sensitivity internal procurement data. UC-004 scored highest of all three on both risk and complexity, 85 and 85, consistent with a use case touching live clinical conversations, HIPAA exposure, and EHR integration, territory meaningfully different from either BFSI use case. In each case, the Executive Summary agent's briefing paragraph correctly named the specific regulatory and operational concerns relevant to that use case rather than generic language, and correctly identified different stakeholder groups affected, procurement and finance for UC-001, compliance and operations for UC-002, clinical staff for UC-004.
+
+This cross domain differentiation, rather than any single score in isolation, is the strongest evidence the system reasons about each use case on its own terms.
 
 ## Sample inputs and outputs
 
-See the samples folder. UC 001, an indirect spend procurement use case, is used as the running example throughout this repository. sample_input_UC-001.json shows the raw input, sample_output_UC-001.json shows the Value agent output alone, and sample_output_UC-001_combined.json shows Value, Risk, and Architecture together as the orchestrator currently produces them.
+See the samples folder. UC-001, an indirect spend procurement use case, is used as the running example throughout this repository and was the first use case every agent was individually tested against during the build. sample_input_UC-001.json shows the raw input, sample_output_UC-001.json shows the Value agent output alone, and sample_output_UC-001_combined.json shows Value, Risk, and Architecture together as an early orchestrator run produced them, before the Adoption and Executive Summary agents were added.
 
 ## Lessons learned
 
-In progress. Will be filled out once the full five agent system has run against the entire synthetic portfolio and real patterns in agent disagreement, false confidence, and scoring drift have been observed and documented.
+Groq's Llama 3.3 70B, run through an OpenAI compatible endpoint, proved a reliable and genuinely free substitute for OpenAI's API during development, worth knowing for anyone building a portfolio project without a billing budget, since OpenAI's API requires a funded account with no meaningful free tier at the time of this build.
+
+The Adoption agent surfaced a pattern worth naming explicitly, high value and technically feasible use cases do not automatically score well on adoption readiness, UC-004's strong value and architecture scores came with only Medium adoption confidence, driven specifically by clinical workforce concerns rather than anything technical. This is precisely the kind of tension a single technical evaluation would miss, and precisely why the system evaluates adoption as an independent dimension rather than folding it into risk.
 
 ## Deployment guide
 
-Clone the repository, create a virtual environment, install the packages listed in requirements.txt, set an OPENAI_API_KEY environment variable, then run `python src/orchestrator.py` from the project root to see a combined assessment for the sample procurement use case. A Streamlit frontend is planned for the next build phase to make this runnable without a terminal.
+Clone the repository, create a virtual environment, install the packages listed in requirements.txt, set a GROQ_API_KEY environment variable, either exported directly or through a local .env file, then run `python src/orchestrator.py` from the project root to see a combined four agent assessment for the sample procurement use case, or run `streamlit run src/app.py` for the full interactive dashboard.
 
 ## Source code
 
-All agent logic lives in src. agents.py holds the Value agent, risk_agent.py holds the Risk and Governance agent, architecture_agent.py holds the Architecture agent, and orchestrator.py wires them together using LangGraph. data holds the synthetic BFSI and Healthcare use case portfolio. samples holds real input and output pairs for demonstration.
+All agent logic lives in src. agents.py holds the Value agent, risk_agent.py holds the Risk and Governance agent, architecture_agent.py holds the Architecture agent, adoption_agent.py holds the Change Management and Adoption agent, portfolio_agent.py holds the Portfolio Prioritization agent, executive_summary_agent.py holds the Executive Summary agent, orchestrator.py wires the first four together using LangGraph, and app.py is the Streamlit frontend. data holds the synthetic BFSI and Healthcare use case portfolio. samples holds real input and output pairs for demonstration.
