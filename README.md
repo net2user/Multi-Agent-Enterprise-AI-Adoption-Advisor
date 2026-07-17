@@ -23,31 +23,9 @@ The assessment logic here reflects patterns seen across twenty five years of ent
 
 ## Architecture
 
+![System architecture diagram](docs/architecture_diagram.png)
+
 A single use case input flows through an orchestrator built on LangGraph. The orchestrator routes the input sequentially through four specialist agents, Value, Risk and Governance, Architecture, and Adoption, each producing an independent structured assessment. Once all four complete, their outputs feed into the Executive Summary agent, which synthesizes them into one board level recommendation. The Portfolio Prioritization agent runs separately, ranking multiple already scored use cases against each other rather than evaluating any single one from scratch.
-
-```
-Use case input
-      |
-      v
- Orchestrator (LangGraph)
-      |
-      v
- Value agent -> Risk and Governance agent -> Architecture agent -> Adoption agent
-      |
-      v
- Executive Summary agent
-      |
-      v
- Output: value score, risk score, complexity score, adoption score,
- board level recommendation (Fund / Fund with Conditions / Delay / Do Not Fund)
-
- Separately, once multiple use cases are scored:
-
- Portfolio Prioritization agent
-      |
-      v
- Ranked portfolio: Quick Win / Strategic Bet / Long Term Play / Reconsider
-```
 
 All five agents run on Groq's Llama 3.3 70B model rather than OpenAI, a deliberate choice made during the build to keep the project genuinely free to run and test, with no billing dependency for anyone cloning the repository to try it themselves.
 
