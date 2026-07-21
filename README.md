@@ -4,7 +4,7 @@ A multi agent system that evaluates proposed AI use cases for BFSI and Healthcar
 
 Built by Vikas Sharma, Senior AI and Digital Transformation Advisor.
 
-Live app: coming soon
+Live app: https://multi-agent-enterprise-ai-adoption-advisor-ixmdm7zxqmqrhxgkzna.streamlit.app
 Source: github.com/net2user/Multi-Agent-Enterprise-AI-Adoption-Advisor
 
 ## Status
