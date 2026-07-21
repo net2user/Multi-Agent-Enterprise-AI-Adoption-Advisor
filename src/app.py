@@ -82,8 +82,8 @@ if run_button and use_case_description.strip():
     rec = summary["overall_recommendation"]
     rec_color = {"Fund": "🟢", "Fund with Conditions": "🟡", "Delay": "🟠", "Do Not Fund": "🔴"}.get(rec, "⚪")
     st.subheader(f"{rec_color} {rec}")
-    st.markdown(f"**{summary['executive_headline']}**")
-    st.write(summary["briefing_paragraph"])
+st.markdown(f"**{summary['executive_headline']}**".replace("$", "\\$"))
+st.write(summary["briefing_paragraph"].replace("$", "\\$"))
 
     col1, col2 = st.columns(2)
     with col1:
