@@ -82,8 +82,12 @@ if run_button and use_case_description.strip():
     rec = summary["overall_recommendation"]
     rec_color = {"Fund": "🟢", "Fund with Conditions": "🟡", "Delay": "🟠", "Do Not Fund": "🔴"}.get(rec, "⚪")
     st.subheader(f"{rec_color} {rec}")
-st.markdown(f"**{summary['executive_headline']}**".replace("$", "\\$"))
-st.write(summary["briefing_paragraph"].replace("$", "\\$"))
+
+    headline_safe = summary["executive_headline"].replace("$", "\\$")
+    briefing_safe = summary["briefing_paragraph"].replace("$", "\\$")
+
+    st.markdown(f"**{headline_safe}**")
+    st.write(briefing_safe)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -102,8 +106,12 @@ st.write(summary["briefing_paragraph"].replace("$", "\\$"))
 
     with c1:
         st.metric("Value", f"{v['value_score']}/100", v["value_tier"])
-        st.caption(tier_color(v["value_tier"]) + " " + v["estimated_annual_value_range_usd"])
-
+        value_range_parts = v["estimated_annual_value_range_usd"].split(" - ")
+        value_range_display = " to ".join(
+            p.strip() if p.strip().startswith("$") else "$" + p.strip()
+            for p in value_range_parts
+        )
+        st.caption(tier_color(v["value_tier"]) + " " + value_range_display.replace("$", "\\$"))
     with c2:
         st.metric("Risk", f"{r['risk_score']}/100", r["risk_tier"])
         st.caption(tier_color(r["risk_tier"]) + " Human in loop: " + str(r["human_in_the_loop_required"]))

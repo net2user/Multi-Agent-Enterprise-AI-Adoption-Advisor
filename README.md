@@ -4,12 +4,12 @@ A multi agent system that evaluates proposed AI use cases for BFSI and Healthcar
 
 Built by Vikas Sharma, Senior AI and Digital Transformation Advisor.
 
-Live app: https://multi-agent-enterprise-ai-adoption-advisor-ixmdm7zxqmqrhxgkzna.streamlit.app
+Live app: coming soon
 Source: github.com/net2user/Multi-Agent-Enterprise-AI-Adoption-Advisor
 
 ## Status
 
-Complete and working end to end. Five agents, an orchestrator, and a Streamlit dashboard are built, tested, and confirmed against use cases spanning BFSI and Healthcare, plus a separate round of robustness testing against inputs the system was never designed for.
+Complete and working end to end. Five agents, an orchestrator, and a Streamlit dashboard are built, tested, and confirmed against use cases spanning BFSI and Healthcare. This is not a proof of concept, it runs.
 
 ## Problem statement
 
@@ -23,11 +23,31 @@ The assessment logic here reflects patterns seen across twenty five years of ent
 
 ## Architecture
 
-![System architecture diagram](docs/architecture_diagram.png)
-
 A single use case input flows through an orchestrator built on LangGraph. The orchestrator routes the input sequentially through four specialist agents, Value, Risk and Governance, Architecture, and Adoption, each producing an independent structured assessment. Once all four complete, their outputs feed into the Executive Summary agent, which synthesizes them into one board level recommendation. The Portfolio Prioritization agent runs separately, ranking multiple already scored use cases against each other rather than evaluating any single one from scratch.
 
-Use case input flows into the Orchestrator built on LangGraph, then sequentially through the Value agent, Risk and Governance agent, Architecture agent, and Adoption agent, then into the Executive Summary agent, producing a value score, risk score, complexity score, adoption score, and a board level recommendation of Fund, Fund with Conditions, Delay, or Do Not Fund. Separately, once multiple use cases are scored, the Portfolio Prioritization agent ranks them as Quick Win, Strategic Bet, Long Term Play, or Reconsider.
+```
+Use case input
+      |
+      v
+ Orchestrator (LangGraph)
+      |
+      v
+ Value agent -> Risk and Governance agent -> Architecture agent -> Adoption agent
+      |
+      v
+ Executive Summary agent
+      |
+      v
+ Output: value score, risk score, complexity score, adoption score,
+ board level recommendation (Fund / Fund with Conditions / Delay / Do Not Fund)
+
+ Separately, once multiple use cases are scored:
+
+ Portfolio Prioritization agent
+      |
+      v
+ Ranked portfolio: Quick Win / Strategic Bet / Long Term Play / Reconsider
+```
 
 All five agents run on Groq's Llama 3.3 70B model rather than OpenAI, a deliberate choice made during the build to keep the project genuinely free to run and test, with no billing dependency for anyone cloning the repository to try it themselves.
 
@@ -63,21 +83,9 @@ Results confirmed the agents differentiate correctly rather than returning simil
 
 This cross domain differentiation, rather than any single score in isolation, is the strongest evidence the system reasons about each use case on its own terms.
 
-## Robustness testing
-
-Beyond the three calibrated use cases above, the system was deliberately tested against inputs it was never designed for, to check whether it fabricates confident sounding answers when given weak or unsuitable input, a known failure mode for LLM systems that always try to produce a plausible looking output regardless of input quality.
-
-Test one, "Deploy AI to pick my lunch order every day," correctly returned Do Not Fund with Value 10, Risk 10, Complexity 20, Adoption 20, all Low tier, and a rationale explicitly naming the lack of a real business case rather than fabricating one.
-
-Test two, a near empty, vague input with no real detail, correctly returned Do Not Fund with Value 0, Risk 0, Complexity 0, Adoption 10, and a rationale stating outright that there was insufficient information to complete a meaningful assessment, rather than inventing detail to fill the schema.
-
-Test three, retail inventory and staffing optimization, a coherent and well specified use case entirely outside the system's BFSI and Healthcare calibration, still returned a sensible Fund with Conditions recommendation with Value 75, Risk 40, Complexity 65, Adoption 68, reasoning about retail operations on their own terms rather than forcing awkward banking or healthcare language onto an unrelated sector.
-
-In all three cases, the system responded with judgment rather than empty confidence, correctly distinguishing a genuine, well specified enterprise AI use case from one that is not, which matters as much as getting the calibrated use cases right.
-
 ## Sample inputs and outputs
 
-See the samples folder. UC-001, an indirect spend procurement use case, is used as the running example throughout this repository and was the first use case every agent was individually tested against during the build. sample_input_UC-001.json shows the raw input, sample_output_UC-001.json shows the Value agent output alone, and sample_output_UC-001_combined.json shows Value, Risk, and Architecture together as an early orchestrator run produced them, before the Adoption and Executive Summary agents were added.
+See the samples folder. UC-001, an indirect spend procurement use case, is used as the running example throughout this repository and was the first use case every agent was individually tested against during the build. sample\_input\_UC-001.json shows the raw input, sample\_output\_UC-001.json shows the Value agent output alone, and sample\_output\_UC-001\_combined.json shows Value, Risk, and Architecture together as an early orchestrator run produced them, before the Adoption and Executive Summary agents were added.
 
 ## Lessons learned
 
@@ -85,12 +93,17 @@ Groq's Llama 3.3 70B, run through an OpenAI compatible endpoint, proved a reliab
 
 The Adoption agent surfaced a pattern worth naming explicitly, high value and technically feasible use cases do not automatically score well on adoption readiness, UC-004's strong value and architecture scores came with only Medium adoption confidence, driven specifically by clinical workforce concerns rather than anything technical. This is precisely the kind of tension a single technical evaluation would miss, and precisely why the system evaluates adoption as an independent dimension rather than folding it into risk.
 
-Streamlit renders a dollar sign as the start of LaTeX math notation by default, which briefly caused dollar amounts in the Executive Summary output to render incorrectly on screen. The fix was escaping dollar signs before display, worth knowing for anyone displaying LLM generated financial figures inside a Streamlit app.
+
+
+Repeated runs of the same use case description can produce different dollar value estimates from the Value agent, since it runs at temperature 0.3, which deliberately allows some variation between calls rather than forcing identical output every time. The exact input "Deploy AI to optimize inventory and staffing at a chain of retail clothing stores" returned $500K to $1.2M on one run and $2.5M to $4.2M on a repeat run of the identical text, both genuine model reasoning rather than an error. This is expected behavior for LLM based agents rather than a bug, worth knowing for anyone demoing a system like this live, exact figures may shift slightly between runs even while the overall recommendation and reasoning stay consistent. Lowering temperature would tighten this consistency at the cost of more mechanical sounding output, a real design tradeoff rather than something to simply fix.
+
+
 
 ## Deployment guide
 
-Clone the repository, create a virtual environment, install the packages listed in requirements.txt, set a GROQ_API_KEY environment variable, either exported directly or through a local .env file, then run python src/orchestrator.py from the project root to see a combined four agent assessment for the sample procurement use case, or run streamlit run src/app.py for the full interactive dashboard.
+Clone the repository, create a virtual environment, install the packages listed in requirements.txt, set a GROQ\_API\_KEY environment variable, either exported directly or through a local .env file, then run `python src/orchestrator.py` from the project root to see a combined four agent assessment for the sample procurement use case, or run `streamlit run src/app.py` for the full interactive dashboard.
 
 ## Source code
 
-All agent logic lives in src. agents.py holds the Value agent, risk_agent.py holds the Risk and Governance agent, architecture_agent.py holds the Architecture agent, adoption_agent.py holds the Change Management and Adoption agent, portfolio_agent.py holds the Portfolio Prioritization agent, executive_summary_agent.py holds the Executive Summary agent, orchestrator.py wires the first four together using LangGraph, and app.py is the Streamlit frontend. data holds the synthetic BFSI and Healthcare use case portfolio. samples holds real input and output pairs for demonstration.
+All agent logic lives in src. agents.py holds the Value agent, risk\_agent.py holds the Risk and Governance agent, architecture\_agent.py holds the Architecture agent, adoption\_agent.py holds the Change Management and Adoption agent, portfolio\_agent.py holds the Portfolio Prioritization agent, executive\_summary\_agent.py holds the Executive Summary agent, orchestrator.py wires the first four together using LangGraph, and app.py is the Streamlit frontend. data holds the synthetic BFSI and Healthcare use case portfolio. samples holds real input and output pairs for demonstration.
+
