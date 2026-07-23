@@ -1,5 +1,7 @@
 # Enterprise AI Adoption Advisor
 
+A multi agent executive decision support framework for prioritizing enterprise AI investments.
+
 Evaluate enterprise AI use cases across five dimensions that actually determine whether an initiative succeeds after approval, not just whether it sounds promising in a slide.
 
 Business Value, Risk and Governance, Technical Feasibility, Organizational Readiness, Portfolio Priority
