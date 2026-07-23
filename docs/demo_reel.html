@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Enterprise AI Adoption Advisor - Live Demo Reel</title>
+<style>
+  body { margin:0; background:#FFFFFF; font-family: Arial, sans-serif; }
+  .wrap { width:1000px; margin:0 auto; background:#FFFFFF; padding:26px 0 10px 0; }
+  .title { text-align:center; font-size:28px; font-weight:800; color:#1a1a1a; margin:0; }
+  .subtitle { text-align:center; font-size:13px; color:#1a1a1a; margin:6px 0 18px 0; }
+
+  .panel { width:940px; margin:0 auto; }
+
+  .input-box {
+    border:2px solid #1a1a1a; border-radius:8px; padding:14px 18px;
+    font-size:14px; color:#1a1a1a; min-height:20px; background:#FFFFFF;
+  }
+  .input-label { font-size:12px; color:#1a1a1a; margin-bottom:6px; font-weight:700; }
+
+  .flow-row { display:flex; justify-content:center; gap:14px; margin:22px 0 10px 0; }
+  .agent-box {
+    width:150px; padding:12px 8px; border-radius:8px; text-align:center;
+    border:2px solid #d0d0d0; background:#FFFFFF; transition: all 0.4s ease;
+  }
+  .agent-box.active { border-color:#4285F4; box-shadow:0 0 0 3px rgba(66,133,244,0.15); }
+  .agent-box .name { font-size:12px; font-weight:700; color:#1a1a1a; }
+  .agent-box .score { font-size:20px; font-weight:800; color:#1a1a1a; margin-top:4px; opacity:0; transition: opacity 0.4s ease; }
+  .agent-box .score.show { opacity:1; }
+  .agent-box .tier { font-size:10px; color:#1a1a1a; opacity:0; transition: opacity 0.4s ease; }
+  .agent-box .tier.show { opacity:1; }
+
+  .verdict-wrap { text-align:center; margin:24px 0 6px 0; min-height:90px; }
+  .exec-label { font-size:11px; font-weight:700; letter-spacing:0.5px; color:#1a1a1a; text-transform:uppercase;
+    opacity:0; transition: opacity 0.5s ease; }
+  .exec-label.show { opacity:1; }
+  .verdict-badge {
+    display:inline-block; padding:8px 20px; border-radius:20px; font-size:15px; font-weight:800;
+    opacity:0; transform: translateY(6px); transition: all 0.5s ease; margin-top:6px;
+  }
+  .verdict-badge.show { opacity:1; transform: translateY(0); }
+  .verdict-headline { font-size:13px; font-weight:700; color:#1a1a1a; margin-top:8px; max-width:820px; margin-left:auto; margin-right:auto;
+    opacity:0; transition: opacity 0.5s ease; }
+  .verdict-headline.show { opacity:1; }
+  .verdict-brief { font-size:12px; color:#1a1a1a; margin-top:6px; max-width:780px; margin-left:auto; margin-right:auto; line-height:1.4;
+    opacity:0; transition: opacity 0.5s ease; }
+  .verdict-brief.show { opacity:1; }
+
+  .dots { text-align:center; margin-top:20px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#d0d0d0; margin:0 4px; }
+  .dot.on { background:#4285F4; }
+
+  .cta-band {
+    text-align:center; margin-top:18px; padding:12px 20px; border-radius:8px;
+    border:1.5px dashed #4285F4; background:#4285F508; max-width:640px; margin-left:auto; margin-right:auto;
+  }
+  .cta-band .cta-title { font-size:12px; font-weight:700; color:#1a1a1a; }
+  .cta-band .cta-sub { font-size:11px; color:#1a1a1a; margin-top:3px; }
+
+  .stamp { text-align:center; font-size:8px; color:#1a1a1a; margin-top:20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="title">Enterprise AI Adoption Advisor</p>
+  <p class="subtitle">Live demo reel, real scores from real tested runs, cycling automatically</p>
+
+  <div class="panel">
+    <div class="input-label">Use case input</div>
+    <div class="input-box" id="inputText">&nbsp;</div>
+
+    <div class="flow-row">
+      <div class="agent-box" id="box-value">
+        <div class="name">Value agent</div>
+        <div class="score" id="score-value"></div>
+        <div class="tier" id="tier-value"></div>
+      </div>
+      <div class="agent-box" id="box-risk">
+        <div class="name">Risk agent</div>
+        <div class="score" id="score-risk"></div>
+        <div class="tier" id="tier-risk"></div>
+      </div>
+      <div class="agent-box" id="box-arch">
+        <div class="name">Architecture agent</div>
+        <div class="score" id="score-arch"></div>
+        <div class="tier" id="tier-arch"></div>
+      </div>
+      <div class="agent-box" id="box-adopt">
+        <div class="name">Adoption agent</div>
+        <div class="score" id="score-adopt"></div>
+        <div class="tier" id="tier-adopt"></div>
+      </div>
+    </div>
+
+    <div class="verdict-wrap">
+      <div class="exec-label" id="execLabel">Board Snapshot</div>
+      <div class="verdict-badge" id="verdictBadge"></div>
+      <div class="verdict-headline" id="verdictHeadline"></div>
+      <div class="verdict-brief" id="verdictBrief"></div>
+    </div>
+
+    <div class="dots" id="dots"></div>
+
+    <div class="cta-band">
+      <div class="cta-title">This is the condensed Board Snapshot only</div>
+      <div class="cta-sub">Full detailed reports, per agent JSON breakdowns, and your own use case are available in the live app: multi-agent-enterprise-ai-adoption-advisor-ixmdm7zxqmqrhxgkzna.streamlit.app</div>
+    </div>
+  </div>
+
+  <p class="stamp">Enterprise AI Adoption Advisor, live tested scenarios. Vikas Sharma, Senior AI and Digital Transformation Advisor | linkedin.com/in/sharma1vikas</p>
+</div>
+
+<script>
+const scenarios = [
+  {
+    input: "UC-001: AI-assisted procurement operations for indirect spend",
+    value: 78, valueTier: "High",
+    risk: 42, riskTier: "Moderate",
+    complexity: 68, complexityTier: "High",
+    adoption: 68, adoptionTier: "High",
+    verdict: "Fund with Conditions", verdictColor: "#FBBC05",
+    headline: "Invest in AI-driven vendor contract review to unlock $840K to $1.26M in annual value, contingent on integration and governance controls",
+    brief: "High value from reduced pricing anomalies and vendor consolidation, moderate risk tied to data quality and audit trails, feasible with a hybrid architecture in roughly 20 weeks to pilot."
+  },
+  {
+    input: "UC-002: Automated KYC document verification",
+    value: 72, valueTier: "High",
+    risk: 70, riskTier: "High",
+    complexity: 68, complexityTier: "High",
+    adoption: 72, adoptionTier: "High",
+    verdict: "Fund with Conditions", verdictColor: "#FBBC05",
+    headline: "Implement AI-powered identity verification to cut manual review time, contingent on robust audit controls given AML and KYC exposure",
+    brief: "Meaningful efficiency gain in onboarding, elevated risk due to AML and KYC regulatory exposure and customer data sensitivity, requires strong human oversight before scaling."
+  },
+  {
+    input: "UC-004: AI-assisted clinical documentation for outpatient visits",
+    value: 78, valueTier: "High",
+    risk: 85, riskTier: "Very High",
+    complexity: 85, complexityTier: "Very High",
+    adoption: 68, adoptionTier: "High",
+    verdict: "Fund with Conditions", verdictColor: "#FBBC05",
+    headline: "Invest in ambient AI for clinical note drafting, contingent on strict HIPAA safeguards and clinical staff change management",
+    brief: "Strong value from reduced documentation burden, the highest risk and complexity scores tested given live clinical conversations and EHR integration, success depends heavily on clinician trust."
+  },
+  {
+    input: "Custom input: Deploy AI to optimize inventory and staffing at a chain of retail clothing stores",
+    value: 75, valueTier: "High",
+    risk: 40, riskTier: "Moderate",
+    complexity: 65, complexityTier: "High",
+    adoption: 68, adoptionTier: "High",
+    verdict: "Fund with Conditions", verdictColor: "#FBBC05",
+    headline: "Invest in AI-driven inventory and staffing optimization to unlock $2.5M to $4.2M in annual value, contingent on data quality controls",
+    brief: "A domain the system was never calibrated for, retail rather than BFSI or Healthcare, yet it reasoned sensibly about inventory and staffing on their own terms."
+  },
+  {
+    input: "Stress test: Deploy AI to pick my lunch order every day",
+    value: 10, valueTier: "Low",
+    risk: 10, riskTier: "Low",
+    complexity: 20, complexityTier: "Low",
+    adoption: 20, adoptionTier: "Low",
+    verdict: "Do Not Fund", verdictColor: "#EA4335",
+    headline: "Automated lunch ordering is not a strategic priority due to low business value and unclear ownership",
+    brief: "A deliberately trivial input, the system correctly recognized low value across every dimension rather than fabricating a confident positive score."
+  },
+  {
+    input: "Stress test: vague input with no real detail",
+    value: 0, valueTier: "Low",
+    risk: 0, riskTier: "Low",
+    complexity: 0, complexityTier: "Low",
+    adoption: 10, adoptionTier: "Low",
+    verdict: "Do Not Fund", verdictColor: "#EA4335",
+    headline: "Insufficient information to justify AI investment, no clear use case details or objectives provided",
+    brief: "A deliberately near empty input, the system stated outright that there was not enough detail to assess, rather than inventing a plausible sounding answer."
+  }
+];
+
+let idx = 0;
+const inputEl = document.getElementById('inputText');
+const dotsEl = document.getElementById('dots');
+scenarios.forEach((_, i) => {
+  const d = document.createElement('span');
+  d.className = 'dot';
+  d.id = 'dot-' + i;
+  dotsEl.appendChild(d);
+});
+
+function typeText(text, cb) {
+  inputEl.textContent = '';
+  let i = 0;
+  const interval = setInterval(() => {
+    inputEl.textContent += text[i];
+    i++;
+    if (i >= text.length) { clearInterval(interval); if (cb) cb(); }
+  }, 18);
+}
+
+function resetBoxes() {
+  ['value','risk','arch','adopt'].forEach(k => {
+    document.getElementById('box-' + k).classList.remove('active');
+    document.getElementById('score-' + k).classList.remove('show');
+    document.getElementById('tier-' + k).classList.remove('show');
+  });
+  document.getElementById('execLabel').classList.remove('show');
+  document.getElementById('verdictBadge').classList.remove('show');
+  document.getElementById('verdictHeadline').classList.remove('show');
+  document.getElementById('verdictBrief').classList.remove('show');
+}
+
+function runScenario(s) {
+  resetBoxes();
+  scenarios.forEach((_, i) => document.getElementById('dot-' + i).classList.remove('on'));
+  document.getElementById('dot-' + idx).classList.add('on');
+
+  typeText(s.input, () => {
+    const seq = [
+      ['value', s.value, s.valueTier],
+      ['risk', s.risk, s.riskTier],
+      ['arch', s.complexity, s.complexityTier],
+      ['adopt', s.adoption, s.adoptionTier]
+    ];
+    seq.forEach(([key, score, tier], i) => {
+      setTimeout(() => {
+        const box = document.getElementById('box-' + key);
+        box.classList.add('active');
+        const scoreEl = document.getElementById('score-' + key);
+        scoreEl.textContent = score + '/100';
+        scoreEl.classList.add('show');
+        const tierEl = document.getElementById('tier-' + key);
+        tierEl.textContent = tier;
+        tierEl.classList.add('show');
+      }, 500 + i * 450);
+    });
+
+    setTimeout(() => {
+      document.getElementById('execLabel').classList.add('show');
+      const badge = document.getElementById('verdictBadge');
+      badge.textContent = s.verdict;
+      badge.style.background = s.verdictColor + '22';
+      badge.style.color = '#1a1a1a';
+      badge.style.border = '2px solid ' + s.verdictColor;
+      badge.classList.add('show');
+      const headline = document.getElementById('verdictHeadline');
+      headline.textContent = s.headline;
+      headline.classList.add('show');
+      const brief = document.getElementById('verdictBrief');
+      brief.textContent = s.brief;
+      brief.classList.add('show');
+    }, 500 + seq.length * 450 + 300);
+  });
+}
+
+function loop() {
+  runScenario(scenarios[idx]);
+  idx = (idx + 1) % scenarios.length;
+  setTimeout(loop, 7500);
+}
+
+loop();
+</script>
+</body>
+</html>
