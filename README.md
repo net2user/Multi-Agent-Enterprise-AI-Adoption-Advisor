@@ -21,8 +21,7 @@ A full animated version of the demo reel above, cycling through six real tested 
 
 Complete and working end to end, live and deployed.
 
-Done: Value agent, Risk and Governance agent, Architecture agent, Adoption agent, Portfolio Prioritization agent, Executive Summary agent, LangGraph orchestrator wiring all five agents together, Streamlit frontend deployed publicly, tested across three calibrated domains and three adversarial robustness scenarios.
-
+Done: Value agent, Risk and Governance agent, Architecture agent, Adoption agent, Portfolio Prioritization agent, Executive Summary agent, LangGraph orchestrator wiring all five agents together, Streamlit frontend deployed publicly with two tabs, Single Use Case and Portfolio View, tested across three calibrated domains, three adversarial robustness scenarios, and a full eight use case portfolio ranking run.
 Nothing is currently in progress. Optional next steps under consideration include a bring your own API key option and a cleaner custom app URL.
 
 ## Problem statement
