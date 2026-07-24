@@ -1,0 +1,20 @@
+Enterprise AI Adoption Advisor
+Copyright (c) 2026 Vikas Sharma
+
+This repository and its contents, including all source code, prompts, agent architecture, evaluation frameworks, scoring methodology, and documentation, are made available for personal viewing, learning, and evaluation purposes only.
+
+Permitted without prior permission:
+- Viewing, cloning, and running this code for personal learning, evaluation, or portfolio review
+- Forking for personal, non commercial experimentation
+
+Requires prior written permission from the copyright holder:
+- Any commercial use of this code or its underlying methodology
+- Redistribution of this code, in whole or in part, as your own work
+- Building a derivative product or service based substantially on this codebase or its scoring methodology
+- Use of this code or its outputs in any client engagement, product, or service offered to a third party
+
+Any permitted use, including personal or educational reference, must retain clear attribution to Vikas Sharma as the original author, with a link back to this repository.
+
+To request permission for any use beyond what is explicitly permitted above, contact sharma1vikas@gmail.com.
+
+This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. In no event shall the author be liable for any claim, damages, or other liability arising from the use of this software.

@@ -8,6 +8,10 @@ Business Value, Risk and Governance, Technical Feasibility, Organizational Readi
 
 Built by Vikas Sharma, Senior AI and Digital Transformation Advisor.
 
+## License and permissions
+
+This repository is available to view, clone, and run for personal learning and evaluation. Commercial use, redistribution as your own work, or building a derivative product based on this codebase or its scoring methodology requires prior written permission. See the LICENSE file for full terms. For permission requests, contact sharma1vikas@gmail.com.
+
 Live app: https://multi-agent-enterprise-ai-adoption-advisor-ixmdm7zxqmqrhxgkzna.streamlit.app
 Source: github.com/net2user/Multi-Agent-Enterprise-AI-Adoption-Advisor
 
