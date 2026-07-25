@@ -1,10 +1,12 @@
 """
 Orchestrator
 
-Wires all five agents together using LangGraph: Value, Risk, Architecture,
-Adoption, then Portfolio Prioritization runs separately across the full
-scored portfolio once every use case has been through the first four.
-Executive Summary agent plugs in next, on top of this combined output.
+Wires six agents together using LangGraph: Value, Risk, Architecture,
+Adoption, and Data Readiness run sequentially for a single use case,
+then Portfolio Prioritization runs separately across the full scored
+portfolio once every use case has been through the first five.
+Executive Summary agent synthesizes the first five into one board
+level recommendation.
 """
 
 import json
@@ -16,6 +18,7 @@ from agents import evaluate_business_value
 from risk_agent import evaluate_risk
 from architecture_agent import evaluate_architecture
 from adoption_agent import evaluate_adoption
+from data_readiness_agent import evaluate_data_readiness
 from portfolio_agent import prioritize_portfolio
 
 
@@ -26,6 +29,7 @@ class AssessmentState(TypedDict):
     risk_result: Optional[dict]
     architecture_result: Optional[dict]
     adoption_result: Optional[dict]
+    data_readiness_result: Optional[dict]
 
 
 def run_value_node(state: AssessmentState) -> AssessmentState:
@@ -48,6 +52,11 @@ def run_adoption_node(state: AssessmentState) -> AssessmentState:
     return state
 
 
+def run_data_readiness_node(state: AssessmentState) -> AssessmentState:
+    state["data_readiness_result"] = evaluate_data_readiness(state["use_case_description"], state.get("portfolio_context"))
+    return state
+
+
 def build_graph():
     graph = StateGraph(AssessmentState)
 
@@ -55,19 +64,21 @@ def build_graph():
     graph.add_node("risk_agent", run_risk_node)
     graph.add_node("architecture_agent", run_architecture_node)
     graph.add_node("adoption_agent", run_adoption_node)
+    graph.add_node("data_readiness_agent", run_data_readiness_node)
 
     graph.set_entry_point("value_agent")
     graph.add_edge("value_agent", "risk_agent")
     graph.add_edge("risk_agent", "architecture_agent")
     graph.add_edge("architecture_agent", "adoption_agent")
-    graph.add_edge("adoption_agent", END)
+    graph.add_edge("adoption_agent", "data_readiness_agent")
+    graph.add_edge("data_readiness_agent", END)
 
     return graph.compile()
 
 
 def run_single_use_case_assessment(use_case_description: str, portfolio_context: dict = None) -> dict:
     """
-    Runs Value, Risk, Architecture, and Adoption for one use case.
+    Runs Value, Risk, Architecture, Adoption, and Data Readiness for one use case.
     """
     app = build_graph()
     initial_state: AssessmentState = {
@@ -77,6 +88,7 @@ def run_single_use_case_assessment(use_case_description: str, portfolio_context:
         "risk_result": None,
         "architecture_result": None,
         "adoption_result": None,
+        "data_readiness_result": None,
     }
     final_state = app.invoke(initial_state)
 
@@ -85,12 +97,13 @@ def run_single_use_case_assessment(use_case_description: str, portfolio_context:
         "risk": final_state["risk_result"],
         "architecture": final_state["architecture_result"],
         "adoption": final_state["adoption_result"],
+        "data_readiness": final_state["data_readiness_result"],
     }
 
 
 def run_full_portfolio_assessment(use_cases: list) -> dict:
     """
-    Runs the full four-agent assessment across every use case in the
+    Runs the full five-agent assessment across every use case in the
     portfolio, then feeds the resulting scores into the Portfolio
     Prioritization Agent for a ranked view.
     """

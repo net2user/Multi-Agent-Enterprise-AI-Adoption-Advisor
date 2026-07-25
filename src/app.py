@@ -76,7 +76,7 @@ with tab_single:
     run_button = st.button("Run assessment", type="primary", key="single_run")
 
     if run_button and use_case_description.strip():
-        with st.spinner("Running Value, Risk, Architecture, and Adoption agents..."):
+        with st.spinner("Running Value, Risk, Architecture, Adoption, and Data Readiness agents..."):
             assessment = run_single_use_case_assessment(use_case_description, portfolio_context)
 
         with st.spinner("Synthesizing executive briefing..."):
@@ -86,6 +86,7 @@ with tab_single:
                 assessment["risk"],
                 assessment["architecture"],
                 assessment["adoption"],
+                assessment.get("data_readiness"),
             )
 
         st.divider()
@@ -113,8 +114,8 @@ with tab_single:
         st.divider()
         st.header("Agent Scorecards")
 
-        v, r, a, ad = assessment["value"], assessment["risk"], assessment["architecture"], assessment["adoption"]
-        c1, c2, c3, c4 = st.columns(4)
+        v, r, a, ad, dr = assessment["value"], assessment["risk"], assessment["architecture"], assessment["adoption"], assessment.get("data_readiness")
+        c1, c2, c3, c4, c5 = st.columns(5)
 
         with c1:
             st.metric("Value", f"{v['value_score']}/100", v["value_tier"])
@@ -137,6 +138,11 @@ with tab_single:
             st.metric("Adoption", f"{ad['adoption_score']}/100", ad["adoption_tier"])
             st.caption(tier_color(ad["adoption_tier"]) + " " + ad["confidence"] + " confidence")
 
+        with c5:
+            if dr:
+                st.metric("Data Readiness", f"{dr['readiness_score']}/100", dr["readiness_tier"])
+                st.caption(tier_color(dr["readiness_tier"]) + f" ~{dr['estimated_data_prep_weeks']} weeks prep")
+
         st.divider()
 
         with st.expander("Value agent detail"):
@@ -147,6 +153,9 @@ with tab_single:
             st.json(a)
         with st.expander("Adoption agent detail"):
             st.json(ad)
+        if dr:
+            with st.expander("Data Readiness agent detail"):
+                st.json(dr)
 
     elif run_button:
         st.warning("Enter a use case description first.")
@@ -192,11 +201,14 @@ with tab_portfolio:
             title = next(u["title"] for u in portfolio if u["id"] == uc_id)
             with st.expander(f"{uc_id}: {title}"):
                 v, r, a, ad = assessment["value"], assessment["risk"], assessment["architecture"], assessment["adoption"]
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Value", f"{v['value_score']}/100", v["value_tier"])
-                c2.metric("Risk", f"{r['risk_score']}/100", r["risk_tier"])
-                c3.metric("Complexity", f"{a['complexity_score']}/100", a["complexity_tier"])
-                c4.metric("Adoption", f"{ad['adoption_score']}/100", ad["adoption_tier"])
+                dr = assessment.get("data_readiness")
+                cols = st.columns(5) if dr else st.columns(4)
+                cols[0].metric("Value", f"{v['value_score']}/100", v["value_tier"])
+                cols[1].metric("Risk", f"{r['risk_score']}/100", r["risk_tier"])
+                cols[2].metric("Complexity", f"{a['complexity_score']}/100", a["complexity_tier"])
+                cols[3].metric("Adoption", f"{ad['adoption_score']}/100", ad["adoption_tier"])
+                if dr:
+                    cols[4].metric("Data Readiness", f"{dr['readiness_score']}/100", dr["readiness_tier"])
 
 st.divider()
 st.caption("Source code: github.com/net2user/Multi-Agent-Enterprise-AI-Adoption-Advisor")
