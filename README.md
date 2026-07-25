@@ -23,10 +23,7 @@ A full animated version of the demo reel above, cycling through six real tested 
 
 ## Status
 
-Complete and working end to end, live and deployed.
-
-Done: Value agent, Risk and Governance agent, Architecture agent, Adoption agent, Portfolio Prioritization agent, Executive Summary agent, LangGraph orchestrator wiring all five agents together, Streamlit frontend deployed publicly with two tabs, Single Use Case and Portfolio View, tested across three calibrated domains, three adversarial robustness scenarios, and a full eight use case portfolio ranking run.
-Nothing is currently in progress. Optional next steps under consideration include a bring your own API key option and a cleaner custom app URL.
+Complete and working end to end. Six agents, an orchestrator, and a Streamlit dashboard with two tabs, Single Use Case and Portfolio View, are built, tested, and confirmed against use cases spanning BFSI and Healthcare, plus a full eight use case portfolio ranking run, live on the deployed app.
 
 ## Problem statement
 
@@ -53,9 +50,9 @@ The assessment logic here reflects patterns seen across twenty five years of ent
 
 ## Architecture
 
-A single use case input flows through an orchestrator built on LangGraph. The orchestrator routes the input sequentially through four specialist agents, Value, Risk and Governance, Architecture, and Adoption, each producing an independent structured assessment. Once all four complete, their outputs feed into the Executive Summary agent, which synthesizes them into one board level recommendation. The Portfolio Prioritization agent runs separately, ranking multiple already scored use cases against each other rather than evaluating any single one from scratch.
+A single use case input flows through an orchestrator built on LangGraph. The orchestrator routes the input sequentially through five specialist agents, Value, Risk and Governance, Architecture, Adoption, and Data Readiness, each producing an independent structured assessment. Once all five complete, their outputs feed into the Executive Summary agent, which synthesizes them into one board level recommendation. The Portfolio Prioritization agent runs separately, ranking multiple already scored use cases against each other rather than evaluating any single one from scratch.
 
-All five agents run on Groq's Llama 3.3 70B model rather than OpenAI, a deliberate choice made during the build to keep the project genuinely free to run and test, with no billing dependency for anyone cloning the repository to try it themselves.
+All six agents run on Groq's Llama 3.3 70B model rather than OpenAI, a deliberate choice made during the build to keep the project genuinely free to run and test, with no billing dependency for anyone cloning the repository to try it themselves.
 
 ## Agent design
 
@@ -69,13 +66,15 @@ Architecture agent evaluates integration complexity and technical feasibility, r
 
 Adoption agent evaluates organizational readiness, the dimension most AI post mortems point to when a technically sound project fails anyway, returning an adoption score, readiness factors, and concrete change management actions.
 
+Data Readiness agent evaluates whether the data a use case actually needs exists in usable form, distinct from Risk, which asks whether data is safe to use rather than whether it exists and is clean enough to work with. It returns a readiness score, factors across availability, quality, governance, and integration readiness, specific data gaps, and an estimated data preparation timeline.
+
 Portfolio Prioritization agent takes the four scores above across multiple use cases and reasons about sequencing, labeling each use case a Quick Win, Strategic Bet, Long Term Play, or Reconsider.
 
 Executive Summary agent reads all four completed assessments for a single use case and writes the board level call, a clear Fund, Fund with Conditions, Delay, or Do Not Fund recommendation, a one sentence headline, a briefing paragraph, and the key tension a board member needs to weigh.
 
 ## Data flow
 
-Input is a plain text use case description, optionally paired with portfolio context, sector, domain, estimated cost, data sensitivity, regulatory exposure, current process maturity. Each agent reasons independently and returns its own structured JSON. The orchestrator collects Value, Risk, Architecture, and Adoption results, then passes all four into the Executive Summary agent for synthesis.
+Input is a plain text use case description, optionally paired with portfolio context, sector, domain, estimated cost, data sensitivity, regulatory exposure, current process maturity. Each agent reasons independently and returns its own structured JSON. The orchestrator collects Value, Risk, Architecture, Adoption, and Data Readiness results, then passes all five into the Executive Summary agent for synthesis.
 
 ## Prompt design
 
@@ -117,8 +116,8 @@ Repeated runs of the same use case description can produce different dollar valu
 
 ## Deployment guide
 
-Clone the repository, create a virtual environment, install the packages listed in requirements.txt, set a GROQ_API_KEY environment variable, either exported directly or through a local .env file, then run `python src/orchestrator.py` from the project root for a combined four agent assessment, or `streamlit run src/app.py` for the full interactive dashboard.
+Clone the repository, create a virtual environment, install the packages listed in requirements.txt, set a GROQ_API_KEY environment variable, either exported directly or through a local .env file, then run `python src/orchestrator.py` from the project root for a combined five agent assessment, or `streamlit run src/app.py` for the full interactive dashboard.
 
 ## Source code
 
-All agent logic lives in src. agents.py holds the Value agent, risk_agent.py holds the Risk and Governance agent, architecture_agent.py holds the Architecture agent, adoption_agent.py holds the Change Management and Adoption agent, portfolio_agent.py holds the Portfolio Prioritization agent, executive_summary_agent.py holds the Executive Summary agent, orchestrator.py wires the first four together, and app.py is the Streamlit frontend. data holds the synthetic use case portfolio. samples holds real input and output pairs. docs holds the architecture diagrams and the animated demo reel.
+All agent logic lives in src. agents.py holds the Value agent, risk_agent.py holds the Risk and Governance agent, architecture_agent.py holds the Architecture agent, adoption_agent.py holds the Change Management and Adoption agent, portfolio_agent.py, data_readiness_agent.py holds the Data Readiness agent, holds the Portfolio Prioritization agent, executive_summary_agent.py holds the Executive Summary agent, orchestrator.py wires the first four together, and app.py is the Streamlit frontend. data holds the synthetic use case portfolio. samples holds real input and output pairs. docs holds the architecture diagrams and the animated demo reel.
