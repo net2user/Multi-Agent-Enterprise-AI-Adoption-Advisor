@@ -24,6 +24,15 @@ def load_portfolio():
         return json.load(f)["use_cases"]
 
 
+@st.cache_data
+def load_cached_assessments():
+    try:
+        with open("data/cached_assessments.json") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"single_use_case": {}, "portfolio_view": None}
+
+
 def tier_color(tier: str) -> str:
     mapping = {
         "Low": "🟢", "Moderate": "🟡", "High": "🟠", "Critical": "🔴",
@@ -43,6 +52,7 @@ st.title("Enterprise AI Adoption Advisor")
 st.caption("Multi agent evaluation for BFSI and Healthcare AI use cases, built by Vikas Sharma, Senior AI and Digital Transformation Advisor")
 
 portfolio = load_portfolio()
+cached_data = load_cached_assessments()
 
 tab_single, tab_portfolio = st.tabs(["Single Use Case", "Portfolio View"])
 
@@ -58,9 +68,11 @@ with tab_single:
             height=100,
         )
         portfolio_context = None
+        selected_uc_id = None
     else:
         uc = next(u for u in portfolio if selected.startswith(u["id"]))
         use_case_description = uc["description"]
+        selected_uc_id = uc["id"]
         portfolio_context = {
             "sector": uc["sector"],
             "domain": uc["domain"],
@@ -77,27 +89,35 @@ with tab_single:
     run_button = st.button("Run assessment", type="primary", key="single_run")
 
     if run_button and use_case_description.strip():
-        assessment_succeeded = False
-        try:
-            with st.spinner("Running Value, Risk, Architecture, Adoption, and Data Readiness agents..."):
-                assessment = run_single_use_case_assessment(use_case_description, portfolio_context)
+        cached_entry = cached_data["single_use_case"].get(selected_uc_id) if selected_uc_id else None
 
-            with st.spinner("Synthesizing executive briefing..."):
-                summary = generate_executive_summary(
-                    use_case_description,
-                    assessment["value"],
-                    assessment["risk"],
-                    assessment["architecture"],
-                    assessment["adoption"],
-                    assessment.get("data_readiness"),
-                )
+        if cached_entry:
+            st.caption("⚡ Instant result from cached assessment, no live API call needed for preset use cases.")
+            assessment = cached_entry["assessment"]
+            summary = cached_entry["summary"]
             assessment_succeeded = True
-        except RateLimitError:
-            st.error("We're experiencing high demand right now. Please wait a minute and try again.")
-        except APIError:
-            st.error("Something went wrong reaching the AI service. Please try again in a moment.")
-        except Exception:
-            st.error("Something unexpected happened while running this assessment. Please try again, and if it keeps happening, try a different use case description.")
+        else:
+            assessment_succeeded = False
+            try:
+                with st.spinner("Running Value, Risk, Architecture, Adoption, and Data Readiness agents..."):
+                    assessment = run_single_use_case_assessment(use_case_description, portfolio_context)
+
+                with st.spinner("Synthesizing executive briefing..."):
+                    summary = generate_executive_summary(
+                        use_case_description,
+                        assessment["value"],
+                        assessment["risk"],
+                        assessment["architecture"],
+                        assessment["adoption"],
+                        assessment.get("data_readiness"),
+                    )
+                assessment_succeeded = True
+            except RateLimitError:
+                st.error("We're experiencing high demand right now. Please wait a minute and try again.")
+            except APIError:
+                st.error("Something went wrong reaching the AI service. Please try again in a moment.")
+            except Exception:
+                st.error("Something unexpected happened while running this assessment. Please try again, and if it keeps happening, try a different use case description.")
 
         if assessment_succeeded:
             st.divider()
@@ -172,67 +192,87 @@ with tab_single:
         st.warning("Enter a use case description first.")
 
 with tab_portfolio:
-    st.markdown("Runs all eight synthetic use cases through Value, Risk, Architecture, and Adoption, then ranks them with the Portfolio Prioritization agent. This takes longer than a single assessment since it makes roughly forty LLM calls in sequence.")
+    if cached_data.get("portfolio_view"):
+        st.markdown("Showing the cached ranking across all eight synthetic use cases, no live API calls needed.")
+        result = cached_data["portfolio_view"]
+        portfolio_succeeded = True
 
-    portfolio_run = st.button("Run full portfolio assessment", type="primary", key="portfolio_run")
+        with st.expander("Prefer a fresh live run instead? (uses API quota, takes a few minutes)"):
+            st.caption("This re-runs all eight use cases through five agents each, roughly forty LLM calls, and will consume a meaningful share of the daily API budget.")
+            live_refresh = st.button("Run live portfolio assessment anyway", key="portfolio_live_refresh")
+            if live_refresh:
+                try:
+                    with st.spinner("Running full live portfolio assessment..."):
+                        result = run_full_portfolio_assessment(portfolio)
+                except RateLimitError:
+                    st.error("We're experiencing high demand right now. Please try again in a few minutes.")
+                    portfolio_succeeded = False
+                except APIError:
+                    st.error("Something went wrong reaching the AI service partway through this run. Please try again in a moment.")
+                    portfolio_succeeded = False
+                except Exception:
+                    st.error("Something unexpected happened during the portfolio assessment. Please try again.")
+                    portfolio_succeeded = False
+    else:
+        st.markdown("Runs all eight synthetic use cases through Value, Risk, Architecture, Adoption, and Data Readiness, then ranks them with the Portfolio Prioritization agent. This takes longer than a single assessment since it makes roughly forty LLM calls in sequence.")
 
-    if portfolio_run:
-        progress_text = st.empty()
-        progress_text.info(f"Assessing {len(portfolio)} use cases across five agents each, then ranking the portfolio, this may take a few minutes...")
+        portfolio_run = st.button("Run full portfolio assessment", type="primary", key="portfolio_run")
 
         portfolio_succeeded = False
-        try:
-            with st.spinner("Running full portfolio assessment..."):
-                result = run_full_portfolio_assessment(portfolio)
-            portfolio_succeeded = True
-        except RateLimitError:
-            progress_text.empty()
-            st.error("We're experiencing high demand right now, this run makes many calls in sequence. Please wait a few minutes and try again.")
-        except APIError:
-            progress_text.empty()
-            st.error("Something went wrong reaching the AI service partway through this run. Please try again in a moment.")
-        except Exception:
-            progress_text.empty()
-            st.error("Something unexpected happened during the portfolio assessment. Please try again.")
+        if portfolio_run:
+            progress_text = st.empty()
+            progress_text.info(f"Assessing {len(portfolio)} use cases across five agents each, then ranking the portfolio, this may take a few minutes...")
 
-        if portfolio_succeeded:
-            progress_text.empty()
-            st.success("Portfolio assessment complete.")
+            try:
+                with st.spinner("Running full portfolio assessment..."):
+                    result = run_full_portfolio_assessment(portfolio)
+                portfolio_succeeded = True
+                progress_text.empty()
+            except RateLimitError:
+                progress_text.empty()
+                st.error("We're experiencing high demand right now, this run makes many calls in sequence. Please wait a few minutes and try again.")
+            except APIError:
+                progress_text.empty()
+                st.error("Something went wrong reaching the AI service partway through this run. Please try again in a moment.")
+            except Exception:
+                progress_text.empty()
+                st.error("Something unexpected happened during the portfolio assessment. Please try again.")
 
-            ranked = result["ranked_portfolio"]["ranked_portfolio"]
+    if portfolio_succeeded:
+        ranked = result["ranked_portfolio"]["ranked_portfolio"]
 
+        st.divider()
+        st.header("Ranked Portfolio")
+
+        for entry in ranked:
+            seq = entry["recommended_sequence"]
+            with st.container():
+                cols = st.columns([0.6, 3, 1.2, 1.5, 4])
+                cols[0].markdown(f"**#{entry['rank']}**")
+                cols[1].markdown(f"**{entry['use_case_title']}**  \n`{entry['use_case_id']}`")
+                cols[2].markdown(f"**{entry['composite_score']}**/100")
+                cols[3].markdown(f"{sequence_color(seq)} {seq}")
+                cols[4].markdown(entry["one_line_justification"])
             st.divider()
-            st.header("Ranked Portfolio")
 
-            for entry in ranked:
-                seq = entry["recommended_sequence"]
-                with st.container():
-                    cols = st.columns([0.6, 3, 1.2, 1.5, 4])
-                    cols[0].markdown(f"**#{entry['rank']}**")
-                    cols[1].markdown(f"**{entry['use_case_title']}**  \n`{entry['use_case_id']}`")
-                    cols[2].markdown(f"**{entry['composite_score']}**/100")
-                    cols[3].markdown(f"{sequence_color(seq)} {seq}")
-                    cols[4].markdown(entry["one_line_justification"])
-                st.divider()
+        st.subheader("Portfolio Level Observations")
+        for obs in result["ranked_portfolio"]["portfolio_level_observations"]:
+            st.write(f"- {obs}")
 
-            st.subheader("Portfolio Level Observations")
-            for obs in result["ranked_portfolio"]["portfolio_level_observations"]:
-                st.write(f"- {obs}")
-
-            st.divider()
-            st.subheader("Per Use Case Detail")
-            for uc_id, assessment in result["per_use_case_assessments"].items():
-                title = next(u["title"] for u in portfolio if u["id"] == uc_id)
-                with st.expander(f"{uc_id}: {title}"):
-                    v, r, a, ad = assessment["value"], assessment["risk"], assessment["architecture"], assessment["adoption"]
-                    dr = assessment.get("data_readiness")
-                    cols = st.columns(5) if dr else st.columns(4)
-                    cols[0].metric("Value", f"{v['value_score']}/100", v["value_tier"])
-                    cols[1].metric("Risk", f"{r['risk_score']}/100", r["risk_tier"])
-                    cols[2].metric("Complexity", f"{a['complexity_score']}/100", a["complexity_tier"])
-                    cols[3].metric("Adoption", f"{ad['adoption_score']}/100", ad["adoption_tier"])
-                    if dr:
-                        cols[4].metric("Data Readiness", f"{dr['readiness_score']}/100", dr["readiness_tier"])
+        st.divider()
+        st.subheader("Per Use Case Detail")
+        for uc_id, assessment in result["per_use_case_assessments"].items():
+            title = next(u["title"] for u in portfolio if u["id"] == uc_id)
+            with st.expander(f"{uc_id}: {title}"):
+                v, r, a, ad = assessment["value"], assessment["risk"], assessment["architecture"], assessment["adoption"]
+                dr = assessment.get("data_readiness")
+                cols = st.columns(5) if dr else st.columns(4)
+                cols[0].metric("Value", f"{v['value_score']}/100", v["value_tier"])
+                cols[1].metric("Risk", f"{r['risk_score']}/100", r["risk_tier"])
+                cols[2].metric("Complexity", f"{a['complexity_score']}/100", a["complexity_tier"])
+                cols[3].metric("Adoption", f"{ad['adoption_score']}/100", ad["adoption_tier"])
+                if dr:
+                    cols[4].metric("Data Readiness", f"{dr['readiness_score']}/100", dr["readiness_tier"])
 
 st.divider()
 st.caption("Source code: github.com/net2user/Multi-Agent-Enterprise-AI-Adoption-Advisor")
