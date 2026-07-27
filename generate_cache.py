@@ -15,11 +15,11 @@ all five agents a second time through run_full_portfolio_assessment,
 cutting total token cost roughly in half compared to running both
 separately.
 
-Cost estimate: eight use cases at roughly six calls each, plus one
-final portfolio ranking call, using your account's own recent average
-of about 872 tokens per call, this totals approximately 42,000 tokens,
-well under a single day's 100,000 token budget on its own. Check your
-Groq usage page first and run this when the day's usage is low.
+Cost estimate: eight use cases at roughly seven calls each (five agents,
+one executive summary, one roadmap), plus one final portfolio ranking
+call, using your account's own recent average of about 872 tokens per
+call, this totals approximately 49,000 tokens. Check your Groq usage
+page first and run this when the day's usage is low.
 """
 
 import json
@@ -27,6 +27,7 @@ import time
 
 from orchestrator import run_single_use_case_assessment
 from executive_summary_agent import generate_executive_summary
+from implementation_roadmap_agent import generate_implementation_roadmap
 from portfolio_agent import prioritize_portfolio
 
 with open("data/use_case_portfolio.json") as f:
@@ -62,9 +63,19 @@ for uc in portfolio:
         assessment.get("data_readiness"),
     )
 
+    roadmap = generate_implementation_roadmap(
+        uc["description"],
+        assessment["value"],
+        assessment["risk"],
+        assessment["architecture"],
+        assessment["adoption"],
+        assessment.get("data_readiness"),
+    )
+
     single_use_case_cache[uc["id"]] = {
         "assessment": assessment,
         "summary": summary,
+        "roadmap": roadmap,
     }
     per_use_case_assessments[uc["id"]] = assessment
 

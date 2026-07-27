@@ -14,6 +14,7 @@ from openai import RateLimitError, APIError
 
 from orchestrator import run_single_use_case_assessment, run_full_portfolio_assessment
 from executive_summary_agent import generate_executive_summary
+from implementation_roadmap_agent import generate_implementation_roadmap
 
 st.set_page_config(page_title="Enterprise AI Adoption Advisor", layout="wide")
 
@@ -95,15 +96,27 @@ with tab_single:
             st.caption("⚡ Instant result from cached assessment, no live API call needed for preset use cases.")
             assessment = cached_entry["assessment"]
             summary = cached_entry["summary"]
+            roadmap = cached_entry.get("roadmap")
             assessment_succeeded = True
         else:
             assessment_succeeded = False
+            roadmap = None
             try:
                 with st.spinner("Running Value, Risk, Architecture, Adoption, and Data Readiness agents..."):
                     assessment = run_single_use_case_assessment(use_case_description, portfolio_context)
 
                 with st.spinner("Synthesizing executive briefing..."):
                     summary = generate_executive_summary(
+                        use_case_description,
+                        assessment["value"],
+                        assessment["risk"],
+                        assessment["architecture"],
+                        assessment["adoption"],
+                        assessment.get("data_readiness"),
+                    )
+
+                with st.spinner("Building implementation roadmap..."):
+                    roadmap = generate_implementation_roadmap(
                         use_case_description,
                         assessment["value"],
                         assessment["risk"],
@@ -175,6 +188,36 @@ with tab_single:
                     st.caption(tier_color(dr["readiness_tier"]) + f" ~{dr['estimated_data_prep_weeks']} weeks prep")
 
             st.divider()
+
+            if roadmap:
+                st.header("Implementation Roadmap")
+                st.caption(f"Estimated total timeline: ~{roadmap['estimated_total_timeline_months']} months, confidence: {roadmap['confidence']}")
+
+                for phase in roadmap["roadmap_phases"]:
+                    with st.expander(f"{phase['timeframe']}: {phase['focus']}"):
+                        st.markdown("**Key milestones**")
+                        for m in phase["key_milestones"]:
+                            st.write(f"- {m}")
+                        if phase.get("dependencies"):
+                            st.markdown("**Dependencies**")
+                            for d in phase["dependencies"]:
+                                st.write(f"- {d}")
+
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.markdown("**Critical path dependencies**")
+                    for cp in roadmap["critical_path_dependencies"]:
+                        st.write(f"- {cp}")
+                with col_b:
+                    st.markdown("**Success metrics**")
+                    for sm in roadmap["success_metrics"]:
+                        st.write(f"- {sm}")
+
+                st.caption(roadmap["rationale"])
+                st.divider()
+            else:
+                st.caption("Implementation roadmap not available for this cached result yet, this preset was cached before the Roadmap agent was added.")
+                st.divider()
 
             with st.expander("Value agent detail"):
                 st.json(v)
