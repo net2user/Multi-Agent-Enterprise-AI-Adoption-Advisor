@@ -10,6 +10,7 @@ tested standalone but never wired into the live interface until now.
 
 import json
 import streamlit as st
+import requests
 from openai import RateLimitError, APIError
 
 from orchestrator import run_single_use_case_assessment, run_full_portfolio_assessment
@@ -17,6 +18,19 @@ from executive_summary_agent import generate_executive_summary
 from implementation_roadmap_agent import generate_implementation_roadmap
 
 st.set_page_config(page_title="Enterprise AI Adoption Advisor", layout="wide")
+
+NTFY_TOPIC = "vikas-enterprise-ai-advisor-alerts-8f3k2"  # your private topic name
+
+
+def notify_owner(message: str):
+    """
+    Best effort push notification to the owner phone via ntfy.sh.
+    Never raises, a failed notification should never break the app itself.
+    """
+    try:
+        requests.post(f"https://ntfy.sh/{NTFY_TOPIC}", data=message.encode("utf-8"), timeout=3)
+    except Exception:
+        pass
 
 
 @st.cache_data
@@ -47,6 +61,57 @@ def sequence_color(seq: str) -> str:
         "Quick Win": "🟢", "Strategic Bet": "🟡", "Long Term Play": "🟠", "Reconsider": "🔴",
     }
     return mapping.get(seq, "⚪")
+
+
+DIMENSION_EXPLAINERS = {
+    "value": (
+        "What this measures: expected business impact, estimated annual value, and the specific drivers behind that number.\n\n"
+        "Scoring bands: 0-30 Low, a point solution or process convenience only. "
+        "31-55 Moderate, meaningful efficiency gain in one function. "
+        "56-80 High, measurable impact on cost, revenue, or risk at a business unit level. "
+        "81-100 Transformational, impact spans multiple functions or changes a core operating model."
+    ),
+    "risk": (
+        "What this measures: compliance, security, privacy, and operational risk, independent of whether the data needed even exists yet.\n\n"
+        "Scoring bands: 0-30 Low, internal automation with no regulated data or customer facing decisions. "
+        "31-55 Moderate, some sensitive data or process change, manageable with standard controls. "
+        "56-80 High, regulated data or customer facing decisions, requires active governance. "
+        "81-100 Critical, direct regulatory exposure or safety and financial harm potential if it fails."
+    ),
+    "architecture": (
+        "What this measures: integration complexity and technical feasibility, how hard this is to actually build and connect to existing systems.\n\n"
+        "Scoring bands: 0-30 Low, single system integration, well defined data. "
+        "31-55 Moderate, two to three integrations, some data quality work needed. "
+        "56-80 High, multiple legacy systems or significant data preparation. "
+        "81-100 Very High, core system dependencies or unproven patterns."
+    ),
+    "adoption": (
+        "What this measures: organizational readiness, leadership sponsorship, workforce impact, and incentive alignment, the human side of whether this actually gets used.\n\n"
+        "Scoring bands: 0-30 Low, unclear ownership, no sponsorship signal. "
+        "31-55 Moderate, needs active change management to succeed. "
+        "56-80 High, clear stakeholder buy in likely. "
+        "81-100 Strong, minimal disruption, clear ownership already in place."
+    ),
+    "data_readiness": (
+        "What this measures: whether the data this use case actually needs exists yet in usable form, distinct from Risk, which asks whether data is safe rather than whether it exists.\n\n"
+        "Scoring bands: 0-30 Low, data likely does not exist yet in usable form. "
+        "31-55 Moderate, data exists but is fragmented or needs cleanup. "
+        "56-80 High, data exists in reasonably usable form. "
+        "81-100 Strong, clean, accessible, well governed data already in place."
+    ),
+}
+
+
+def render_score_explainer(dimension_key: str, agent_result: dict):
+    """
+    Shows a short, plain language explanation of what this score measures
+    and its bands, plus the actual rationale this specific run produced.
+    Uses only data already returned by the agent, no extra API calls.
+    """
+    with st.expander("ℹ️ How is this score determined?"):
+        st.caption(DIMENSION_EXPLAINERS[dimension_key])
+        st.markdown("**This specific result:**")
+        st.write(agent_result.get("rationale", "No rationale provided."))
 
 
 st.title("Enterprise AI Adoption Advisor")
@@ -126,6 +191,7 @@ with tab_single:
                     )
                 assessment_succeeded = True
             except RateLimitError:
+                notify_owner("Enterprise AI Adoption Advisor: a visitor hit the rate limit on Single Use Case.")
                 st.error("We're experiencing high demand right now. Please wait a minute and try again.")
             except APIError:
                 st.error("Something went wrong reaching the AI service. Please try again in a moment.")
@@ -169,23 +235,28 @@ with tab_single:
                     for p in value_range_parts
                 )
                 st.caption(tier_color(v["value_tier"]) + " " + value_range_display.replace("$", "\\$"))
+                render_score_explainer("value", v)
 
             with c2:
                 st.metric("Risk", f"{r['risk_score']}/100", r["risk_tier"])
                 st.caption(tier_color(r["risk_tier"]) + " Human in loop: " + str(r["human_in_the_loop_required"]))
+                render_score_explainer("risk", r)
 
             with c3:
                 st.metric("Complexity", f"{a['complexity_score']}/100", a["complexity_tier"])
                 st.caption(tier_color(a["complexity_tier"]) + f" ~{a['estimated_time_to_pilot_weeks']} weeks to pilot")
+                render_score_explainer("architecture", a)
 
             with c4:
                 st.metric("Adoption", f"{ad['adoption_score']}/100", ad["adoption_tier"])
                 st.caption(tier_color(ad["adoption_tier"]) + " " + ad["confidence"] + " confidence")
+                render_score_explainer("adoption", ad)
 
             with c5:
                 if dr:
                     st.metric("Data Readiness", f"{dr['readiness_score']}/100", dr["readiness_tier"])
                     st.caption(tier_color(dr["readiness_tier"]) + f" ~{dr['estimated_data_prep_weeks']} weeks prep")
+                    render_score_explainer("data_readiness", dr)
 
             st.divider()
 
@@ -248,6 +319,7 @@ with tab_portfolio:
                     with st.spinner("Running full live portfolio assessment..."):
                         result = run_full_portfolio_assessment(portfolio)
                 except RateLimitError:
+                    notify_owner("Enterprise AI Adoption Advisor: a visitor hit the rate limit on Portfolio View live refresh.")
                     st.error("We're experiencing high demand right now. Please try again in a few minutes.")
                     portfolio_succeeded = False
                 except APIError:
@@ -273,6 +345,7 @@ with tab_portfolio:
                 progress_text.empty()
             except RateLimitError:
                 progress_text.empty()
+                notify_owner("Enterprise AI Adoption Advisor: a visitor hit the rate limit running the full Portfolio View.")
                 st.error("We're experiencing high demand right now, this run makes many calls in sequence. Please wait a few minutes and try again.")
             except APIError:
                 progress_text.empty()
