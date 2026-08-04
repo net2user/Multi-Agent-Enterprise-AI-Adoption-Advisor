@@ -19,6 +19,20 @@ from implementation_roadmap_agent import generate_implementation_roadmap
 
 st.set_page_config(page_title="Enterprise AI Adoption Advisor", layout="wide")
 
+st.markdown("""
+<style>
+@media (max-width: 768px) {
+    div[data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+    }
+    div[data-testid="column"] {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 NTFY_TOPIC = "vikas-enterprise-ai-advisor-alerts-8f3k2"  # your private topic name
 
 
