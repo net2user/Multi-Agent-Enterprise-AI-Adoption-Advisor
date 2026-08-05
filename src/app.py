@@ -405,4 +405,3 @@ with tab_portfolio:
                     cols[4].metric("Data Readiness", f"{dr['readiness_score']}/100", dr["readiness_tier"])
 
 st.divider()
-st.caption("Source code: github.com/net2user/Multi-Agent-Enterprise-AI-Adoption-Advisor")
