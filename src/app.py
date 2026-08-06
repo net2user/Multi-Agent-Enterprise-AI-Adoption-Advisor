@@ -115,15 +115,33 @@ DIMENSION_EXPLAINERS = {
     ),
 }
 
+EXPLAINER_DETAIL_FIELDS = {
+    "value": ("value_drivers", "Value drivers behind this number"),
+    "risk": ("key_concerns", "Specific concerns identified"),
+    "architecture": ("integration_challenges", "Integration challenges identified"),
+    "adoption": ("adoption_barriers", "Adoption barriers identified"),
+    "data_readiness": ("data_gaps", "Data gaps identified"),
+}
+
 
 def render_score_explainer(dimension_key: str, agent_result: dict):
     """
     Shows a short, plain language explanation of what this score measures
-    and its bands, plus the actual rationale this specific run produced.
-    Uses only data already returned by the agent, no extra API calls.
+    and its bands, the actual supporting list this agent returned (value
+    drivers, concerns, barriers, or gaps depending on dimension), and the
+    rationale this specific run produced. Uses only data already returned
+    by the agent, no extra API calls.
     """
     with st.expander("ℹ️ How is this score determined?"):
         st.caption(DIMENSION_EXPLAINERS[dimension_key])
+
+        field_name, field_label = EXPLAINER_DETAIL_FIELDS[dimension_key]
+        detail_list = agent_result.get(field_name)
+        if detail_list:
+            st.markdown(f"**{field_label}:**")
+            for item in detail_list:
+                st.write(f"- {item}")
+
         st.markdown("**This specific result:**")
         st.write(agent_result.get("rationale", "No rationale provided."))
 
