@@ -43,6 +43,12 @@ Return your evaluation as strict JSON with this exact schema, and nothing else:
   "rationale": "<2-3 sentence rationale in plain, consulting-grade language>"
 }
 
+Each value driver must include a short justification, an estimated magnitude, percentage, or concrete mechanism,
+not just a category name. Write "Reduced pricing anomalies through AI-driven contract review, an estimated 10-15
+percent reduction in erroneous payments" rather than just "Reduced pricing anomalies through AI-driven review."
+If a precise figure cannot be reasonably inferred, name the specific mechanism driving the value instead of a
+bare category label.
+
 Scoring guidance:
 - 0-30: Low value, likely a point solution or process convenience only
 - 31-55: Moderate value, meaningful efficiency gain in one function
